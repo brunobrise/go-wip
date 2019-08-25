@@ -20,30 +20,77 @@ type Todo struct {
 	Attachments []Attachment `json:"attachments"`
 }
 
-// CreateTodoResult is the resulted from creating a todo
-type CreateTodoResult struct {
-	Todo Todo `json:"createTodo,omitempty"`
-}
-
-// CreateTodo creates a todo for authenticated user
+// CreateTodo creates a todo (authenticated user)
 func (c *Client) CreateTodo(todo Todo) (Todo, error) {
 	completedAt := ""
 	if todo.CompletedAt != "" {
 		completedAt = fmt.Sprintf(`completed_at: "%s"`,
 			time.Now().UTC().Format("2006-01-02T15:04:05.999Z"))
 	}
-	req := graphql.NewRequest(fmt.Sprintf(`mutation {
-		createTodo (input: { 
-			body: "%s",
-			%s,}) {
-				id
-				body
-				created_at
-				updated_at
-				completed_at
-	} }`, todo.Body, completedAt))
+	req := graphql.NewRequest(fmt.Sprintf(`
+	mutation {
+		createTodo (input: { body: "%s", %s,}) { 
+			id
+			body
+			created_at
+			updated_at
+			completed_at
+		}
+	}`, todo.Body, completedAt))
 
-	var res CreateTodoResult
+	var res struct {
+		Todo Todo `json:"createTodo,omitempty"`
+	}
+	err := c.do(req, &res)
+	if err != nil {
+		log.Println(err)
+		return Todo{}, err
+	}
+
+	return res.Todo, nil
+}
+
+// CompleteTodo completes a todo (authenticated user)
+func (c *Client) CompleteTodo(todo Todo) (Todo, error) {
+	req := graphql.NewRequest(fmt.Sprintf(`
+	mutation {
+		completeTodo (id: %s) {
+			id
+			body
+			created_at
+			updated_at
+			completed_at
+		}
+	}`, todo.ID))
+
+	var res struct {
+		Todo Todo `json:"completeTodo,omitempty"`
+	}
+	err := c.do(req, &res)
+	if err != nil {
+		log.Println(err)
+		return Todo{}, err
+	}
+
+	return res.Todo, nil
+}
+
+// CompleteTodo completes a todo (authenticated user)
+func (c *Client) UncompleteTodo(todo Todo) (Todo, error) {
+	req := graphql.NewRequest(fmt.Sprintf(`
+	mutation {
+		uncompleteTodo (id: %s) {
+			id
+			body
+			created_at
+			updated_at
+			completed_at
+		}
+	}`, todo.ID))
+
+	var res struct {
+		Todo Todo `json:"uncompleteTodo,omitempty"`
+	}
 	err := c.do(req, &res)
 	if err != nil {
 		log.Println(err)
