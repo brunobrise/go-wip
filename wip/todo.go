@@ -75,7 +75,7 @@ func (c *Client) CompleteTodo(todo Todo) (Todo, error) {
 	return res.Todo, nil
 }
 
-// CompleteTodo completes a todo (authenticated user)
+// UncompleteTodo completes a todo (authenticated user)
 func (c *Client) UncompleteTodo(todo Todo) (Todo, error) {
 	req := graphql.NewRequest(fmt.Sprintf(`
 	mutation {
@@ -90,6 +90,31 @@ func (c *Client) UncompleteTodo(todo Todo) (Todo, error) {
 
 	var res struct {
 		Todo Todo `json:"uncompleteTodo,omitempty"`
+	}
+	err := c.do(req, &res)
+	if err != nil {
+		log.Println(err)
+		return Todo{}, err
+	}
+
+	return res.Todo, nil
+}
+
+// UpdateTodoBody creates a todo (authenticated user)
+func (c *Client) UpdateTodoBody(todo Todo) (Todo, error) {
+	req := graphql.NewRequest(fmt.Sprintf(`
+	mutation {
+		updateTodoBody (id: %s, input: { body: "%s" }) { 
+			id
+			body
+			created_at
+			updated_at
+			completed_at
+		}
+	}`, todo.ID, todo.Body))
+
+	var res struct {
+		Todo Todo `json:"updateTodoBody,omitempty"`
 	}
 	err := c.do(req, &res)
 	if err != nil {
