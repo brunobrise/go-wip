@@ -124,3 +124,22 @@ func (c *Client) UpdateTodoBody(todo Todo) (Todo, error) {
 
 	return res.Todo, nil
 }
+
+// DeleteTodo creates a todo (authenticated user)
+func (c *Client) DeleteTodo(todo Todo) (string, error) {
+	req := graphql.NewRequest(fmt.Sprintf(`
+	mutation {
+		deleteTodo (id: %s) 
+	}`, todo.ID))
+
+	var res struct {
+		DeleteTodo string `json:"deleteTodo,omitempty"`
+	}
+	err := c.do(req, &res)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return res.DeleteTodo, nil
+}
