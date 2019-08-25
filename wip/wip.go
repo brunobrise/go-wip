@@ -2,51 +2,48 @@
 package wip
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
-	"net/http"
+
+	"github.com/machinebox/graphql"
 )
 
 // Version is the version of this wrapper
-const Version = "0.0.1"
+const Version = "0.1"
 
 const baseAddress = "https://wip.chat/graphql"
 
 // Client is a client for working with the WIP API
 type Client struct {
-	http    *http.Client
 	baseURL string
 	apiKey  string
+
+	graphql *graphql.Client
 }
 
-// NewClient creates a Client that will use the specified API key
+// NewClient creates a GraphQL client that uses the specified apiKey key
+// to connect to server at baseAddress
 func NewClient(apikey string) Client {
 	return Client{
-		baseURL: baseAddress,
 		apiKey:  apikey,
+		graphql: graphql.NewClient(baseAddress, graphql.UseMultipartForm()),
 	}
 
 }
 
-// doRequest send HTTP request.
-func (s *Client) doRequest(req *http.Request) ([]byte, error) {
-	// Headers
-	req.Header.Set("Authorization", fmt.Sprint("bearer", s.apiKey))
+// do connect to GraphQL server, execute the specified request
+// and mutate the provided variable
+func (c *Client) do(req *graphql.Request, result interface{}) error {
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	ctx := context.Background()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	err := c.graphql.Run(ctx, req, &result)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if 200 != resp.StatusCode {
-		return nil, fmt.Errorf("%s", body)
-	}
-	return body, nil
+
+	return nil
 }
