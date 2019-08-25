@@ -58,7 +58,7 @@ func (c *Client) GetUser(id string) User {
 }
 
 // GetViewer fetches authenticated user
-func (c *Client) GetViewer() User {
+func (c *Client) GetViewer() (User, error) {
 	req := graphql.NewRequest(`{ viewer {
 		id
 		username
@@ -110,8 +110,9 @@ func (c *Client) GetViewer() User {
 	var data ViewerData
 	err := c.do(req, &data)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return User{}, err
 	}
 
-	return data.Viewer
+	return data.Viewer, nil
 }
